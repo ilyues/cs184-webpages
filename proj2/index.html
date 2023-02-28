@@ -9,239 +9,255 @@
     <br /><br />
     <hr />
     <br />
-    <h2>Task 1</h2>
+    <h2>Overview</h2>
     <p>
-      To rasterize triangles, we want to sample every point inside the triangle.
-      To do this, we want to be sure that every point is within the bounds of
-      the three lines which comprise the triangle, and then apply the sampling
-      function to these points which fulfil this requirement. This often
-      involves iterating through points in the frame buffer and testing whether
-      they are within these bounds.
+      De Casteljau's algorithm is a recursive method used to evaluate Bezier
+      curves. Through repeated linear interpolation, the algorithm allows us to
+      find a point which lies on the Bezier curve at a given parameter <i>t</i>,
+      where <i>t</i> is between 0 and 1.
+    </p>
+
+    <h2>Part 1: Bezier Curves with 1D de Casteljau Subdivision</h2>
+    <p>
+      De Casteljau's algorithm is a recursive method used to evaluate Bezier
+      curves. Through repeated linear interpolation, the algorithm allows us to
+      find a point which lies on the Bezier curve at a given parameter <i>t</i>,
+      where <i>t</i> is between 0 and 1.
     </p>
     <p>
-      For our rasterization algorithm, we identify and organise the three points
-      of the triangle into leftmost, middle, and rightmost points. We then
-      identify the slopes of the three lines of the triangle.
+      Given <i>n</i> control points <i>p<sub>1</sub></i
+      >, ..., <i>p<sub>n</sub></i> and the parameter <i>t</i>, De Casteljau's
+      algorithm uses linear interpolation to compute <i>n</i> - 1 intermediate
+      control points at <i>t</i> in the next subdivision level. These are
+      <i>p'<sub>1</sub></i
+      >, ..., <i>p'<sub>n-1</sub></i
+      >, where <i>p'<sub>i</sub></i> = (1-<i>t</i>) <i>p<sub>i</sub></i> +
+      <i>tp<sub>i+1</sub></i
+      >.
     </p>
 
     <p>
-      We sample in two halves -- one loop which samples all points within the
-      triangle from the leftmost to the middle point, and then repeating the
-      same process in a loop from the middle point to the rightmost point. We
-      find an upper bound slope and lower bound slope by comparing the
-      leftmost-to-middle slope and the leftmost-to-rightmost slope. From the
-      left point, we loop through points within the triangle, sampling from the
-      leftmost point to the middle point in vertical lines. We find the starting
-      and ending points of the next vertical line by increasing y's lower bound
-      and upper bound by the respective slopes of the triangle. Once we reach
-      the middle point, we re-identify the upper and lower bound slopes and
-      repeat this sampling process for the remaining section of the triangle.
+      This is applied <i>n</i> - 1 times on the previous subdivision level until
+      producing a final singular point which lies on the Bezier curve at
+      <i>t</i>.
     </p>
 
     <p>
-      Since this algorithm only samples points within the triangle, it is better
-      than one which checks each sample within the bounding box of the triangle.
-      Unfortunately we didn't have time to compare this with simple bounding box
-      triangle rasterization, since this was the initial approach we directly
-      implemented and so couldn't turn "off" our optimization.
+      In this part, I implemented one level of the algorithm (one level of
+      subdivision) in a function which took in an array of control points and
+      returned an array of control points at the next subdivision level. I
+      iterated through the argument array and applied the lerp function for
+      <i>p'<sub>i</sub></i> described above, before pushing this to an array of
+      the new control points.
     </p>
     <br />
-    <img src="./task1.png" width="600px" id="figure" />
-    <figcaption>basic/test4.svg with the default viewing parameters</figcaption>
-    <br />
-    <br />
+    <div class="col2">
+      <div>
+        <img src="./p1_1.png" width="95%" id="figure" />
+        <figcaption>Unevaluated curve</figcaption>
+      </div>
 
-    <h2>Task 2</h2>
-    <p>
-      Supersampling is useful as it samples multiple points inside each pixel to
-      reduce the effects of aliasing, which can cause "jaggies" or jagged edges
-      on rendered objects. In our supersampling algorithm, we are able to
-      antialias the rasterization of our triangle by setting each pixel of the
-      frame_buffer to the average color of super-samples inside that pixel.
-    </p>
-    <p>
-      In order to antialias the triangle by supersampling, we added to our
-      rasterize_triangle algorithm from task 1. First, we divided each point
-      inside the triangle into multiple smaller pixels based on the given
-      sample_rate, by multiplying the x and y coordinates of the triangle's
-      vertices by the square root of sample_rate. By doing this, we are
-      increasing the resolution of the triangle, enabling us to sample multiple
-      points per pixel. Then, as per our original task 1 algorithm, we loop
-      through points in the triangle, sampling from the left. To account for
-      supersampling in our other functions, we changed set_sample_rate and
-      set_framebuffer_target to appropriately resize sample_buffer according to
-      the sample_rate. In resolve_to_framebuffer, we looped through the pixels
-      and looped through the supersampled points, setting the value of the pixel
-      to the average colour of the super samples. The fill_pixel function was
-      also modified to consider the rasterization of lines, such as the
-      borderline in test 4.
-    </p>
+      <div>
+        <img src="./p1_2.png" width="95%" id="figure" />
+        <figcaption>Step 1 of evaluation</figcaption>
+      </div>
+    </div>
 
-    <p></p>
+    <div class="col2">
+      <div>
+        <img src="./p1_3.png" width="95%" id="figure" />
+        <figcaption>Step 2 of evaluation</figcaption>
+      </div>
 
-    <br />
-    <br />
+      <div>
+        <img src="./p1_4.png" width="95%" id="figure" />
+        <figcaption>Step 3 of evaluation</figcaption>
+      </div>
+    </div>
 
-    <h2>Task 3</h2>
-    <p>
-      We transformed cubeman so that he's looking off into the distance (he
-      would be squinting if he had eyes). His head is tilted back slightly
-      (rotated), and his left arm is angled (the two parts rotated and
-      translated) to place his "hand" on his "hip". His right arm is angled
-      upwards (rotated and translated), shielding his eyes (again, if he had
-      eyes).
-    </p>
-    <img src="./task3.png" width="600px" id="figure" />
-    <figcaption>Cubeman squinting off into the distance</figcaption>
-    <p></p>
-    <br />
-    <br />
+    <div class="col2">
+      <div>
+        <img src="./p1_5.png" width="95%" id="figure" />
+        <figcaption>Step 4 of evaluation</figcaption>
+      </div>
 
-    <h2>Task 4</h2>
-    <p>
-      Barycentric coordinates are a coordinate system which can be used to
-      express any point on a triangle in reference to the scalar values at the
-      vertices of the triangle. This allows us to interpolate to obtain smoothly
-      varying values across the surface. An example can be seen below in the
-      triangle with a red, green, and blue vertex, producing a smoothly blended
-      color triangle. Barycentric coordinates allow us to retrieve the color at
-      any point in the triangle, which will be a blend of the three colors of
-      the three vertices depending on the point's position relative to each
-      vertex. Points closer to the blue vertex will contain more of a blue
-      "value", and this applies respectively for each vertex.
-    </p>
-    <img src="./task_4.svg" width="600px" id="figure" />
-    <figcaption>A smoothly blended color triangle</figcaption>
+      <div>
+        <img src="./p1_6.png" width="95%" id="figure" />
+        <figcaption>(Final) step 5 of evaluation</figcaption>
+      </div>
+    </div>
 
-    <img src="./task_4.png" width="600px" id="figure" />
+    <img src="./p1_7.png" width="100%" id="figure" />
+    <figcaption>Completed Bezier curve</figcaption>
+
+    <img src="./p1_8.png" width="100%" id="figure" />
     <figcaption>
-      A screenshot of svg/basic/test7.svg with default viewing parameters and
-      sample rate 1
+      Slightly modified Bezier curve with moved control points and modified
+      <i>t</i> parameter.
     </figcaption>
 
     <br />
     <br />
 
-    <h2>Task 5</h2>
+    <h2>Part 2: Bezier Surfaces with Separable 1D de Casteljau</h2>
     <p>
-      Pixel sampling is used to display textures. It maps the pixels on a screen
-      to texture pixels, also known as "texels". We use this technique to
-      convert coordinates to the texture space, and map information from the
-      texture space to the image. See the figure below for an example.
+      The De Casteljau algorithm extends to Bezier surfaces through the
+      separable 1D De Casteljau algorithm. The algorithm described above is
+      applied to a <i>n</i> * <i>n</i> grid of original control points, with
+      parameters <i>u</i> and <i>v</i>.
     </p>
     <p>
-      Nearest Pixel Sampling and Bilinear Pixel Sampling are types of methods
-      for pixel sampling that we implemented in this assignment. Nearest Pixel
-      Sampling consists of finding the closest texel value through rounding the
-      specific texture coordinates at a given pixel's location. This method is
-      fast, however, it can produce jaggies or unwanted artifacts. Bilinear
-      Pixel Sampling uses linear interpolation to identify texels, and
-      calculates the average color value.
+      Each row of <i>n</i> control points defines a Bezier curve parameterised
+      by <i>u</i>; the respective final, single point <i>P<sub>i</sub></i> is
+      evaluated recursively for each of <i>n</i> rows using the algorithm in
+      part 1, with <i>u</i> as the argument <i>t</i>.
     </p>
+
     <p>
-      Our implementation of sample_nearest involves taking the texture
-      coordinates (u,v) of a pixel, and returning the color of the nearest texel
-      to that pixel. As such, each pixel is assigned to the color of the texel
-      that it is the closest to.
+      The <i>n</i> <i>P<sub>i</sub></i
+      >'s for each of the <i>n</i> rows then define a Bezier curve with
+      parameter <i>v</i>. This is also then evaluated recursively with De
+      Casteljau's to produce a final singular point which lies on the Bezier
+      surface for given parameters <i>u</i> and <i>v</i>.
     </p>
+
+    <p></p>
+    <img src="./p1_9.png" width="100%" id="figure" />
+    <figcaption>
+      Screenshot of <code>bez/teapot.bez</code> evaluated by my implementation
+    </figcaption>
+    <br />
+    <br />
+
+    <h2>Part 3: Area-Weighted Vertex Normals</h2>
     <p>
-      Our implementation of sample_bilinear involves taking in the texture
-      coordinates (u,v) of a pixel, and returning the color of that pixel based
-      on the weighted average of the colors around it, specifically of four
-      surrounding texels. This method produces a smoother texture as it blends
-      colors between neighbouring texels.
+      I implemented area-weighted normal vectors at a vertex by iterating
+      through neighbouring vertices, storing two vertex positions <i>A</i> and
+      <i>B</i> at a time, in addition to the original vertex position <i>C</i>.
+      Using these three vertices, I found vectors <i>C - A</i> and <i>C - B</i>,
+      and used their cross product to calculate the normal to the face.
     </p>
+
     <p>
-      Both functions, sample_nearest and sample_bilinear are called within the
-      rasterize_textured_triangle function, which loops through pixels of the
-      triangle and calculates the texture coordinates at each pixel using
-      barycentric interpolation. Then, we call the respective sampling function
-      (nearest or bilinear) to apply the color of the pixel.
+      I then found the area-weighted normal by dividing this cross product by
+      0.5 * its magnitude, and pushed the area-weighted normal to an array of
+      all weighted normals. I repeated this process for each face incident to
+      the vertex. To find the final vector normal, I summed the weighted normals
+      within the array, and divided this summed vector by its own magnitude.
     </p>
-    <br /><br />
-    <div id="row">
+    <div class="col2">
       <div>
-        <img src="./task5_1.png" width="350px" id="figure" />
-        <figcaption>Nearest sampling at 1 sample per pixel</figcaption>
+        <img src="./p10.png" width="95%" id="figure" />
+        <figcaption>
+          Screenshot of <code>dae/teapot.dae</code> without vertex normals
+          (default flat shading)
+        </figcaption>
       </div>
+
       <div>
-        <img src="./task5_2.png" width="350px" id="figure" />
-        <figcaption>Bilinear sampling at 1 sample per pixel</figcaption>
+        <img src="./p11.png" width="95%" id="figure" />
+        <figcaption>
+          Screenshot of <code>dae/teapot.dae</code> with vertex normals (Phong
+          shading)
+        </figcaption>
       </div>
     </div>
+
+    <p></p>
+    <br />
+    <br />
+
+    <h2>Part 4: Edge Flip</h2>
+    <p>
+      To implement edge flipping, I initiated pointers to every half-edge, face,
+      and vertex. I then reassigned all the half-edges' next, twin, vertex,
+      edge, and face pointers according to the flipped result -- I kept the
+      vertices and halfedges on the sides of the external "diamond" in the same
+      position, but re-assigned the pointer to edge (<i>b</i>, <i>c</i>) to the
+      vertices <i>a</i> and <i>d</i>. The faces (<i>a</i>, <i>b</i>, <i>c</i>)
+      and (<i>b</i>, <i>c</i>, <i>d</i>) then became (<i>a</i>, <i>c</i>,
+      <i>d</i>) and (<i>a</i>, <i>b</i>, <i>d</i>) respectively, and I
+      reassigned the corresponding halfedges based on any face changes. I
+      implemented a check at the beginning of the function to return if the
+      element is at a boundary.
+    </p>
+
+    <img src="./p14.png" width="95%" />
+
+    <p>
+      Regarding debugging, my implementation was close to correct on my initial
+      attempt. My "debugging" process mostly consisted of re-reading the
+      assignments for each mesh element, and then catching and correcting some
+      assignments which didn't make sense to me upon the second read.
+    </p>
+    <div class="col2">
+      <div>
+        <img src="./p13.png" width="95%" id="figure" />
+        <figcaption>
+          Screenshot of <code>dae/teapot.dae</code> before edge flips
+        </figcaption>
+      </div>
+
+      <div>
+        <img src="./p12.png" width="95%" id="figure" />
+        <figcaption>
+          Screenshot of <code>dae/teapot.dae</code> after some edge flips
+        </figcaption>
+      </div>
+    </div>
+
+    <br />
+    <br />
+
+    <h2>Part 5: Edge Split</h2>
+    <p>
+      For this part, my implementation process was very similar to my
+      implementation of edge flips. I initiated pointers to every relevant mesh
+      element (vertices, faces, halfedges) and re-assigned all their pointers
+      according to the "after split" diagram, including to newly created mesh
+      elements. I created the appropriate new halfedges, edges, faces, and
+      vertex, and assigned all their pointers. Like Part 4, I "re-purposed" the
+      original edge (<i>b</i>, <i>c</i>), this time to become (<i>b</i>,
+      <i>m</i>), and faces (<i>a</i>, <i>b</i>, <i>c</i>) and (<i>b</i>,
+      <i>c</i>, <i>d</i>) became (<i>a</i>, <i>b</i>, <i>m</i>) and (<i>b</i>,
+      <i>d</i>, <i>m</i>) respectively. For the position of <i>m</i>, I added
+      the positions of <i>a</i>, <i>b</i>, <i>c</i>, and <i>d</i>, and then
+      divided this sum by 4.
+    </p>
+    <p>
+      Errors I encountered here were also related to incorrect pointer
+      assignments in my original attempt, usually to do with assigning to the
+      correct new face and keeping in mind the anti-clockwise direction of the
+      half-edges, since I didn't redraw the diagram. I debugged this again
+      mostly through carefully re-reading my pointer assignments.
+    </p>
+
     <br /><br />
-    <div id="row">
-      <div>
-        <img src="./task5_3.png" width="350px" id="figure" />
-        <figcaption>Nearest sampling at 16 samples per pixel</figcaption>
-      </div>
-      <div>
-        <img src="./task5_4.png" width="350px" id="figure" />
-        <figcaption>Bilinear sampling at 16 samples per pixel</figcaption>
-      </div>
+    <div>
+      <img src="./p15.png" width="95%" id="figure" />
+      <figcaption>
+        Screenshot of <code>dae/teapot.dae</code> before edge splits/flips
+      </figcaption>
+    </div>
+    <div>
+      <img src="./p16.png" width="95%" id="figure" />
+      <figcaption>
+        Screenshot of <code>dae/teapot.dae</code> with some edge splits
+      </figcaption>
+    </div>
+    <div>
+      <img src="./p17.png" width="95%" id="figure" />
+      <figcaption>
+        Screenshot of <code>dae/teapot.dae</code> with some edge splits and
+        flips
+      </figcaption>
     </div>
     <br />
     <br />
 
-    <h2>Task 6</h2>
-    <p>
-      Level sampling and pixel mapping are both used to perform texture aliasing
-      in texture mapping. Level sampling differs in that it samples from
-      mipmaps, also known as minified textures, where the highest mipmaps have
-      the lowest resolutions of texture, and level zero mipmaps have full
-      resolutions. This technique is ideal when a higher resolution texture
-      space is attempting to map onto a lower resolution screen space. Level
-      sampling decreases the resolution of the texture image to a resolution
-      that matches the screen's sampling rate, to avoid having many texels
-      involved in one pixel. This way, a desired one to one mapping between the
-      texture and screen space can be acheived, eliminating aliasing.
-    </p>
-    <p>
-      Our algorithm selects the appropriate mipmap by calculating the texture
-      coordinates in (u,v) for (x, y), (x+1 y), and (x, y+1). Then, these are
-      used to calculate the partial derivatives, with respect to x and y. Taking
-      log with base 2 of the max absolute square sum of each partial
-      derivatives, will give back the desired mipmap level. We implemented this
-      process in the rasterize_textured_triangle, sample, and get_level
-      functions. For the options available, we can select nearest level, or
-      bilinear, which computes a weighted sum from each adjacent mipmap level
-      using interpolation.
-    </p>
-    <p>
-      Now, we can adjust our sampling technique by (1) pixel sampling, (2) level
-      sampling, and (3) number of samples per pixel. Here are some tradeoffs
-      between speed, memory usage, and antialiasing power between the three
-      various techniques...
-    </p>
-    <p>
-      <span style="font-weight: bold">Pixel Sampling: </span>
-      Pixel sampling is fast for nearest sampling and slow for bilinear
-      sampling. Its memory usage is relatively low since it does not store and
-      computational results. In terms of its power, pixel sampling tends to be
-      weaker at producing images when textures are minified. The more minified
-      or complicated an image is, the more antialiasing tends to exist, which
-      can cause problems.
-    </p>
-    <p>
-      <span style="font-weight: bold">Level Sampling: </span>
-      Level sampling is also fast for nearest sampling and slower for bilinear
-      sampling. In terms of speed, it is still faster than supersampling. Its
-      memory usage is low, as it also does not store computational results. For
-      its power, level sampling is the most efficient at antialiasing when
-      texture minification is required or necessary to perform. It is effective
-      at mapping textures from higher resolutions texture spaces into a lower
-      resolution screen space.
-    </p>
-    <p>
-      <span style="font-weight: bold"
-        >Number of Samples per Pixel (Supersampling):
-      </span>
-      Finally, supersampling's speed is slow and uses the most memory. Although
-      it is a good technique for higher sampling rates, it takes up a ton of
-      memory. This is due to needing to save each super sample value, requiring
-      lots of computational effort. However, it can be effective at eliminating
-      almost all aliasing.
-    </p>
+    <h2>Part 6: Loop Subdivision for Mesh Upsampling</h2>
+    <p></p>
+    <p></p>
 
     <br /><br />
     <div id="row">

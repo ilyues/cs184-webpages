@@ -7,6 +7,7 @@ figcaption {
   color: gray;
   font-style: italic;
   font-size: 14px;
+  margin-bottom: 20px;
 }
 
 hr {
@@ -25,4 +26,8 @@ hr {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
+}
+
+.col2 {
+  display: flex;
 }
