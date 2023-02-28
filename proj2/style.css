@@ -1,0 +1,28 @@
+html {
+  font-family: 'Noto Sans', sans-serif;
+  padding: 60px 26% 300px 26%;
+}
+
+figcaption {
+  color: gray;
+  font-style: italic;
+  font-size: 14px;
+}
+
+hr {
+  background-color: gray;
+}
+
+#figure {
+  border-style: solid;
+  border-color: rgb(225, 225, 225);
+  border-width: 2px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+#row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
