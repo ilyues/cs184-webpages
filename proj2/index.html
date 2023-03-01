@@ -5,24 +5,51 @@
 
   <body>
     <h1>Project 2</h1>
-    Isabel Li
+    Isabel Li<br />
+    <a href="https://ilyues.github.io/cs184-webpages/proj2/index.html"
+      >https://ilyues.github.io/cs184-webpages/proj2/index.html</a
+    >
     <br /><br />
     <hr />
     <br />
     <h2>Overview</h2>
     <p>
-      De Casteljau's algorithm is a recursive method used to evaluate Bezier
-      curves. Through repeated linear interpolation, the algorithm allows us to
-      find a point which lies on the Bezier curve at a given parameter <i>t</i>,
-      where <i>t</i> is between 0 and 1.
+      In this assignment, I explored various geometric modelling concepts to
+      produce a mesh editor. I began by learning how to build Bezier curves
+      using the De Casteljau algorithm, learning the basis of how the control
+      points correspond with the produce curve and creating a curve editor
+      within the program. I was able to reinforce my understanding of how the
+      algorithm extends to building Bezier surfaces. Equipped with the ability
+      to build surfaces, I then learnt and implemented different methods of
+      manipulating the surface "mesh": applying Phong shading through
+      area-weighted vertex normals, flipping and splitting edges through pointer
+      reassignments, as well as mesh upsampling through loop subdivision.
+      Overall, I was able to build a program which could load and manipulate
+      three dimensional models.
     </p>
 
+    <p>
+      Reflecting on my implementation and process, I appreciated how completing
+      these tasks gave me a greater understanding of how to compute the values
+      needed for these mesh manipulations. I encountered problems to do with
+      float division, pointer reassignment, and incorrectly splitting/flipping
+      edges for mesh upsampling. I was able to overcome some of these problems
+      by using the debugger in Xcode and setting appropriate breakpoints,
+      especially to identify where the program ran into infinite loops or
+      discover errors in float division. Some of the other issues I was able to
+      resolve through inspection of the output (such as the cube for Part 6) to
+      recognise that edges were not being split properly, and focusing my
+      debugging efforts on that part of the method.
+    </p>
+    <br />
+    <br />
     <h2>Part 1: Bezier Curves with 1D de Casteljau Subdivision</h2>
     <p>
-      De Casteljau's algorithm is a recursive method used to evaluate Bezier
-      curves. Through repeated linear interpolation, the algorithm allows us to
-      find a point which lies on the Bezier curve at a given parameter <i>t</i>,
-      where <i>t</i> is between 0 and 1.
+      I implemented De Casteljau's algorithm to build a Bezier curve given an
+      input of control points. De Casteljau's algorithm is a recursive method
+      used to evaluate Bezier curves. Through repeated linear interpolation, the
+      algorithm allows us to find a point which lies on the Bezier curve at a
+      given parameter <i>t</i>, where <i>t</i> is between 0 and 1.
     </p>
     <p>
       Given <i>n</i> control points <i>p<sub>1</sub></i
@@ -101,10 +128,12 @@
 
     <h2>Part 2: Bezier Surfaces with Separable 1D de Casteljau</h2>
     <p>
-      The De Casteljau algorithm extends to Bezier surfaces through the
-      separable 1D De Casteljau algorithm. The algorithm described above is
-      applied to a <i>n</i> * <i>n</i> grid of original control points, with
-      parameters <i>u</i> and <i>v</i>.
+      I used the De Casteljau algorithm to build Bezier surfaces given a
+      <i>n</i> * <i>n</i> grid of input control points. The De Casteljau
+      algorithm extends to Bezier surfaces through the separable 1D De Casteljau
+      algorithm. The algorithm described above is applied to a <i>n</i> *
+      <i>n</i> grid of original control points, with parameters <i>u</i> and
+      <i>v</i>.
     </p>
     <p>
       Each row of <i>n</i> control points defines a Bezier curve parameterised
@@ -131,11 +160,13 @@
 
     <h2>Part 3: Area-Weighted Vertex Normals</h2>
     <p>
-      I implemented area-weighted normal vectors at a vertex by iterating
-      through neighbouring vertices, storing two vertex positions <i>A</i> and
-      <i>B</i> at a time, in addition to the original vertex position <i>C</i>.
-      Using these three vertices, I found vectors <i>C - A</i> and <i>C - B</i>,
-      and used their cross product to calculate the normal to the face.
+      To produce Phong shading as opposed to flat shading, I calculated
+      area-weighted normal vertices. I implemented area-weighted normal vectors
+      at a vertex by iterating through neighbouring vertices, storing two vertex
+      positions <i>A</i> and <i>B</i> at a time, in addition to the original
+      vertex position <i>C</i>. Using these three vertices, I found vectors
+      <i>C - A</i> and <i>C - B</i>, and used their cross product to calculate
+      the normal to the face.
     </p>
 
     <p>
@@ -169,17 +200,19 @@
 
     <h2>Part 4: Edge Flip</h2>
     <p>
-      To implement edge flipping, I initiated pointers to every half-edge, face,
-      and vertex. I then reassigned all the half-edges' next, twin, vertex,
-      edge, and face pointers according to the flipped result -- I kept the
-      vertices and halfedges on the sides of the external "diamond" in the same
-      position, but re-assigned the pointer to edge (<i>b</i>, <i>c</i>) to the
-      vertices <i>a</i> and <i>d</i>. The faces (<i>a</i>, <i>b</i>, <i>c</i>)
-      and (<i>b</i>, <i>c</i>, <i>d</i>) then became (<i>a</i>, <i>c</i>,
-      <i>d</i>) and (<i>a</i>, <i>b</i>, <i>d</i>) respectively, and I
-      reassigned the corresponding halfedges based on any face changes. I
-      implemented a check at the beginning of the function to return if the
-      element is at a boundary.
+      Edge flipping is one method of mesh manipulation which converts a pair of
+      triangles into a new pair, with the edge between them rotated (or
+      "flipped") in orientation. To implement edge flipping, I initiated
+      pointers to every half-edge, face, and vertex. I then reassigned all the
+      half-edges' next, twin, vertex, edge, and face pointers according to the
+      flipped result -- I kept the vertices and halfedges on the sides of the
+      external "diamond" in the same position, but re-assigned the pointer to
+      edge (<i>b</i>, <i>c</i>) to the vertices <i>a</i> and <i>d</i>. The faces
+      (<i>a</i>, <i>b</i>, <i>c</i>) and (<i>b</i>, <i>c</i>, <i>d</i>) then
+      became (<i>a</i>, <i>c</i>, <i>d</i>) and (<i>a</i>, <i>b</i>, <i>d</i>)
+      respectively, and I reassigned the corresponding halfedges based on any
+      face changes. I implemented a check at the beginning of the function to
+      return if the element is at a boundary.
     </p>
 
     <img src="./p14.png" width="95%" />
@@ -211,18 +244,21 @@
 
     <h2>Part 5: Edge Split</h2>
     <p>
-      For this part, my implementation process was very similar to my
-      implementation of edge flips. I initiated pointers to every relevant mesh
-      element (vertices, faces, halfedges) and re-assigned all their pointers
-      according to the "after split" diagram, including to newly created mesh
-      elements. I created the appropriate new halfedges, edges, faces, and
-      vertex, and assigned all their pointers. Like Part 4, I "re-purposed" the
-      original edge (<i>b</i>, <i>c</i>), this time to become (<i>b</i>,
-      <i>m</i>), and faces (<i>a</i>, <i>b</i>, <i>c</i>) and (<i>b</i>,
-      <i>c</i>, <i>d</i>) became (<i>a</i>, <i>b</i>, <i>m</i>) and (<i>b</i>,
-      <i>d</i>, <i>m</i>) respectively. For the position of <i>m</i>, I added
-      the positions of <i>a</i>, <i>b</i>, <i>c</i>, and <i>d</i>, and then
-      divided this sum by 4.
+      I implemented edge splitting, another local remeshing operation which
+      takes a pair of triangles separated by an edge and inserts a new vertex at
+      the centre of the edge, splitting each of the two triangles in half with
+      two additional edges (resulting in four triangles). For this part, my
+      implementation process was very similar to my implementation of edge
+      flips. I initiated pointers to every relevant mesh element (vertices,
+      faces, halfedges) and re-assigned all their pointers according to the
+      "after split" diagram, including to newly created mesh elements. I created
+      the appropriate new halfedges, edges, faces, and vertex, and assigned all
+      their pointers. Like Part 4, I "re-purposed" the original edge (<i>b</i>,
+      <i>c</i>), this time to become (<i>b</i>, <i>m</i>), and faces (<i>a</i>,
+      <i>b</i>, <i>c</i>) and (<i>b</i>, <i>c</i>, <i>d</i>) became (<i>a</i>,
+      <i>b</i>, <i>m</i>) and (<i>b</i>, <i>d</i>, <i>m</i>) respectively. For
+      the position of <i>m</i>, I added the positions of <i>a</i>, <i>b</i>,
+      <i>c</i>, and <i>d</i>, and then divided this sum by 4.
     </p>
     <p>
       Errors I encountered here were also related to incorrect pointer
@@ -256,30 +292,198 @@
     <br />
 
     <h2>Part 6: Loop Subdivision for Mesh Upsampling</h2>
-    <p></p>
-    <p></p>
+    <p>
+      I used loop subdivision to process mesh upsampling. To implement loop
+      subdivision, I followed the recommended solution of breaking up the method
+      into computing new vertex positions for old vertices, computing new vertex
+      positions associated with edges, splitting all edges, flipping new edges
+      which connected an old and new vertex, and copying in the new vertex
+      positions.
+    </p>
+    <p>
+      To begin, I computed new positions for all existing vertices in the input
+      mesh using the equation
+      <code
+        >(1 - n * u) * original_position + u *
+        original_neighbor_position_sum</code
+      >
+      where <i>n</i> is the number of edges incident to the vertex; and
+      <i>u</i> is 3/16 if <i>n</i> = 3, or 3 / 8 * <i>n</i> otherwise;
+      <i>original_position</i> is the original position of the old vertex, and
+      <i>original_neighbor_position_sum</i> is the sum of all original positions
+      of the neighboring vertices. I stored these new positions in each existing
+      vertex's <code>newPosition</code> pointer, and also set the
+      <code>isNew</code> property to false.
+    </p>
+
+    <p>
+      Similarly, I computed and new vertex positions and stored them in the
+      <code>newPosition</code> property for the edges which would split to
+      produce these new vertices. The position of a new vertex splitting the
+      shared edge (<i>A</i>, <i>B</i>) between a pair of triangles (<i>A</i>,
+      <i>C</i>, <i>B</i>) and (<i>A</i>, <i>B</i>, <i>D</i>) is
+      <code>3/8 * (A + B) + 1/8 * (C + D)</code>. I also set these existing
+      edges' <code>isNew</code> property to be false.
+    </p>
+
+    <p>
+      To split the appropriate edges, I split the edges which had no new
+      vertices, and set the resultant vertex to be new along with assigning it
+      its pre-computed new position. I also set the newly created edges to be
+      true for <code>isNew</code>, to assist in flipping the correct edges.
+    </p>
+
+    <p>
+      I then iterated again over all edges and flipped edges if they were new
+      and had exactly one new vertex. Finally, I reassigned all old vertices to
+      have their new position.
+    </p>
+    <div class="col2">
+      <div>
+        <img src="./p6_1.png" width="95%" id="figure" />
+        <figcaption>
+          Screenshot of <code>dae/cube.dae</code> before upsampling
+        </figcaption>
+      </div>
+
+      <div>
+        <img src="./p6_2.png" width="95%" id="figure" />
+        <figcaption>
+          Screenshot of <code>dae/cube.dae</code> after upsampling once
+        </figcaption>
+      </div>
+    </div>
+    <div class="col2">
+      <div>
+        <img src="./p6_3.png" width="95%" id="figure" />
+        <figcaption>
+          Screenshot of <code>dae/cube.dae</code> after upsampling twice
+        </figcaption>
+      </div>
+
+      <div>
+        <img src="./p6_4.png" width="95%" id="figure" />
+        <figcaption>
+          Screenshot of <code>dae/cube.dae</code> after upsampling three times
+        </figcaption>
+      </div>
+    </div>
+
+    <p>
+      I noticed that after loop subdivision, the sharp corners and edges on
+      meshes become more rounded, "curving" even if they were original straight
+      lines. This is because they are pulled closer in towards the neighbouring
+      vertices in position when upsampling -- for example, for a corner of the
+      cube which directly protrudes towards a certain direction, every
+      neighbouring vertex (other corners of the cube) is further away from that
+      direction. Therefore, by weighting neighbouring vertices in the
+      computation of this vertex's new position, it moves slightly away from the
+      direction it pointed in and "rounds" out.
+    </p>
+
+    <p>
+      I also saw that after a few iterations of subdivision on the cube model,
+      the mesh becomes slightly asymmetrical after repeated subdivisions. This
+      is because the original mesh is asymmetrical, despite the symmetrical cube
+      surface produced. Since each face of the cube is split diagonally but
+      asymmetrically, some cube vertices have five neighbouring vertices, while
+      some have four. This difference factors into the calculation of new vertex
+      positions, leading to asymmetry in the new vertices and an overall
+      asymmetry to the shape.
+    </p>
+
+    <br />
+
+    <div class="col2">
+      <div>
+        <img src="./p7_1.png" width="95%" id="figure" />
+        <figcaption>
+          Screenshot of <code>dae/cube.dae</code> before upsampling, with edges
+          split symmetrically on each face
+        </figcaption>
+      </div>
+
+      <div>
+        <img src="./p7_2.png" width="95%" id="figure" />
+        <figcaption>
+          Screenshot of <code>dae/cube.dae</code> after upsampling once, with
+          edges split symmetrically on each face
+        </figcaption>
+      </div>
+    </div>
+    <div class="col2">
+      <div>
+        <img src="./p7_3.png" width="95%" id="figure" />
+        <figcaption>
+          Screenshot of <code>dae/cube.dae</code> after upsampling twice, with
+          edges split symmetrically on each face
+        </figcaption>
+      </div>
+
+      <div>
+        <img src="./p7_4.png" width="95%" id="figure" />
+        <figcaption>
+          Screenshot of <code>dae/cube.dae</code> after upsampling three times,
+          with edges split symmetrically on each face
+        </figcaption>
+      </div>
+    </div>
+
+    <p>
+      To subdivide the cube symmetrically, I pre-processed by splitting the edge
+      of the mesh which cuts across each face of the cube so that the mesh for
+      the cube was also symmetrical. This meant all the vertices had the same
+      number of neighbouring vertices, and so the new vertex position
+      calculations were relatively the same, producing a "perfect" rounded cube.
+    </p>
+    <br />
+    <div class="col2">
+      <div>
+        <img src="./p8_1.png" width="95%" id="figure" />
+        <figcaption>
+          Screenshot of <code>dae/cube.dae</code> before upsampling, with
+          "pre-processing" for sharper corners
+        </figcaption>
+      </div>
+
+      <div>
+        <img src="./p8_2.png" width="95%" id="figure" />
+        <figcaption>
+          Screenshot of <code>dae/cube.dae</code> after upsampling once, with
+          "pre-processing" for sharper corners
+        </figcaption>
+      </div>
+    </div>
+    <div class="col2">
+      <div>
+        <img src="./p8_3.png" width="95%" id="figure" />
+        <figcaption>
+          Screenshot of <code>dae/cube.dae</code> after upsampling twice, with
+          "pre-processing" for sharper corners
+        </figcaption>
+      </div>
+
+      <div>
+        <img src="./p8_4.png" width="95%" id="figure" />
+        <figcaption>
+          Screenshot of <code>dae/cube.dae</code> after upsampling three times,
+          with "pre-processing" for sharper corners
+        </figcaption>
+      </div>
+    </div>
+    <p>
+      I reduced the effect of the rounded corners by splitting the edges of the
+      cube (first across each face to be symmetrical, then at each edge of the
+      cube) so that the vertices original protrude more, mitigating the rounding
+      effect when the vertex is "pulled back" by its neighbouring vertices for
+      its new position.
+    </p>
+    <br />
 
     <br /><br />
-    <div id="row">
-      <div>
-        <img src="./task5-1.png" width="350px" id="figure" />
-        <figcaption>[REPLACE] L_ZERO and P_NEAREST</figcaption>
-      </div>
-      <div>
-        <img src="./task5-2.png" width="350px" id="figure" />
-        <figcaption>[REPLACE] L_ZERO and P_LINEAR</figcaption>
-      </div>
-    </div>
-    <br /><br />
-    <div id="row">
-      <div>
-        <img src="./task5-1.png" width="350px" id="figure" />
-        <figcaption>[REPLACE] L_NEAREST and P_NEAREST</figcaption>
-      </div>
-      <div>
-        <img src="./task5-2.png" width="350px" id="figure" />
-        <figcaption>[REPLACE] L_NEAREST and P_LINEAR</figcaption>
-      </div>
-    </div>
+
+    <a href="https://ilyues.github.io/cs184-webpages/proj2/index.html"
+      >https://ilyues.github.io/cs184-webpages/proj2/index.html</a
+    >
   </body>
 </html>
