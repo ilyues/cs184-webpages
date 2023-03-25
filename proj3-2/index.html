@@ -1,7 +1,285 @@
 <html>
-	<head>
-	</head>
-	<body>
-		Project 3-2 here
-	</body>
+  <head>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+
+  <body>
+    <h1>Project 3-2</h1>
+    Isabel Li<br />
+    <a href="https://ilyues.github.io/cs184-webpages/proj3-2/index.html"
+      >https://ilyues.github.io/cs184-webpages/proj3-2/index.html</a
+    >
+    <br /><br />
+    <hr />
+    <br />
+    <h2>Overview</h2>
+    <p>
+      In this assignment, I implemented mirror and glass materials as well as
+      depth of field to apply my respective understandings of reflection and
+      refraction and simulating a thin lens. For mirror and glass materials, I
+      added the transformation for reflection, implemented mirror material,
+      produced refractive elements using Snell's law, and applied Schlick's
+      approximation for glas material. I uniformly sampled the disk representing
+      the thin lens and calculated a new ray which originates from the lens and
+      intersects with the plane of focus to create a depth of field effect.
+    </p>
+
+    <p>
+      Reflecting on my implementation and process, I faced some minor problems
+      implementing the glass material BSDF with some slip-ups in writing the
+      code for our <code>sample_f()</code> routine, but fixed this through
+      carefully looking at my implementation line-by-line and comparing to the
+      routine specified in the project docs. I also initially made mistakes when
+      calculating the intersection of the plane of focus and ray produced from
+      the pinhole camera, but was able to correct this through looking closely
+      at the calculation for plane-line intersection on Wikipedia.
+    </p>
+    <br />
+    <br />
+    <h2>Part A: Mirror and Glass Materials</h2>
+    <p>
+      To achieve rendering scenes with mirror and glass materials, I implemented
+      reflection with a simple transformation which takes advantage of the
+      object coordinate space which the BSDF calculations occur in. Because the
+      <i>z</i> axis lies along the normal vector, a reflection transforms the
+      <i>x</i> and <i>y</i> coordinates to be negative. To add mirror material,
+      we reflect the outgoing light direction and store this in the incident
+      light direction. We return
+      <code>reflectance / abs_cos_theta(*wi)</code> to cancel out the cosine
+      that that <code>at_least_one_bounce_radiance()</code> will multiply by
+      because perfect mirrors only change the ray direction but don't cause
+      Lambertian falloff. I implemented refraction using Snell's law, checking
+      that the light refracts when it does not experience total internal
+      reflection. The coordinates for the resultant refracted ray are
+      <code>ω<sub>i</sub>.x=−ηω<sub>o</sub>.x</code>,
+      <code>ω<sub>i</sub>.y=−ηω<sub>o</sub>.y</code>, and
+      <code
+        >ω<sub>i</sub>.z=∓sqrt(1-η<super>2</super>(1-ω<sub>o</sub>.z<super>2</super>))</code
+      >. For glass material, I used Schlick's approximation to model the ratio
+      of the reflection energy to refraction energy. Because the sample function
+      for glass material can only return one ray direction, we use this
+      approximation as a coin-flip probability of either reflecting or
+      refracting.
+    </p>
+
+    <br />
+
+    <div class="col2">
+      <div>
+        <img src="./spheres_m0_1024.png" width="95%" id="figure" />
+        <figcaption>max ray depth = 0</figcaption>
+      </div>
+
+      <div>
+        <img src="./spheres_m1_1024.png" width="95%" id="figure" />
+        <figcaption>max ray depth = 1</figcaption>
+      </div>
+    </div>
+
+    <div class="col2">
+      <div>
+        <img src="./spheres_m2_1024.png" width="95%" id="figure" />
+        <figcaption>max ray depth = 2</figcaption>
+      </div>
+
+      <div>
+        <img src="./spheres_m3_1024.png" width="95%" id="figure" />
+        <figcaption>max ray depth = 3</figcaption>
+      </div>
+    </div>
+
+    <div class="col2">
+      <div>
+        <img src="./spheres_m4_1024.png" width="95%" id="figure" />
+        <figcaption>max ray depth = 4</figcaption>
+      </div>
+
+      <div>
+        <img src="./spheres_m5_1024.png" width="95%" id="figure" />
+        <figcaption>max ray depth = 5</figcaption>
+      </div>
+    </div>
+
+    <div>
+      <img src="./spheres_m100_1024.png" width="95%" id="figure" />
+      <figcaption>max ray depth = 100</figcaption>
+    </div>
+
+    <p>
+      The images above show the scene <code>CBspheres.dae</code> rendered with
+      <code>max_ray_depth</code> set to 0, 1, 2, 3, 4, 5, and 100.
+    </p>
+
+    <p>
+      At <code>max_ray_depth</code> set to 0, we cannot see the spheres, or
+      anything that isn't a light at zero bounces. This is because we only
+      return objects directly emitting light towards the camera.
+    </p>
+
+    <p>
+      At <code>max_ray_depth</code> set to 1, we have one bounce, which only
+      includes objects which are directly illuminated. The spheres are black
+      with a reflection of the ceiling light, because at one bounce the light
+      hits the surface of the spheres and reflects to the cameras. It can be
+      noted that the right sphere is also refractive, so some rays enter the
+      sphere; the reflected light patch on the right sphere is more "spotty",
+      while the reflected light patch on the left sphere is "complete" with no
+      absorbed rays.
+    </p>
+
+    <p>
+      At <code>max_ray_depth</code> set to 2, we can notice that for the left
+      reflective sphere, the mirror material can reflect with two light bounces.
+      The ceiling is now no longer black after receiving reflected light rays.
+      In the reflective sphere, the ceiling's reflection is still black as it
+      reflects the ceiling's appearance "from the previous bounce" and requires
+      another light bounce for the coloured ceiling to appear. For the
+      refractive sphere, it is still dark as another bounce is required for the
+      light from the back wall to go through the sphere, but we can see some of
+      the reflected light rays.
+    </p>
+
+    <p>
+      At <code>max_ray_depth</code> set to 3, we can see that the reflective
+      left sphere is now reflecting the coloured ceiling with another bounce. In
+      the left (mirror) sphere's reflection, we can see that the right sphere is
+      still dark -- another bounce is required for the light from this right
+      sphere to be reflected from the left. There is a light beneath the sphere
+      on the right, resulting from light from the ceiling bouncing to the top of
+      the sphere, then into the bottom surface of the sphere, and then to the
+      floor of the box before reaching the camera.
+    </p>
+
+    <p>
+      At <code>max_ray_depth</code> set to 4, we can see that there is also a
+      reflection in the right sphere of the light on the ground, resulting in a
+      "glow" effect at the bottom of the sphere.
+    </p>
+
+    <p>
+      At <code>max_ray_depth</code> set to 5, there are not noticeable new
+      effects in the scene, but with another bounce, we can see that the shadows
+      in the scene are lighter.
+    </p>
+
+    <p>
+      At <code>max_ray_depth</code> set to 100, we can see that with up to 100
+      bounces, the scene is slightly lighter with more reflected light with each
+      bounce. However, since the amount of light reflected at each bounce
+      diminishes, the difference is still rather marginal.
+    </p>
+
+    <br />
+    <br />
+
+    <h2>Part B: Depth of Field</h2>
+    <p>
+      The difference between a pinhole and lens camera is that in a pinhole
+      model, the image is always focused, while with a lens the image is brought
+      to focus by adjusting the lens position. Since a pinhole camera has such a
+      small opening, incidental light arrives from a singular direction and
+      source; the intensity of light entering is fixed. Meanwhile in a lens
+      camera the intensity of light entering is controlled by the size of the
+      lens aperture. This is what allows a lens camera to focus at one distance
+      and blur the foreground and background, producing depth of field.
+    </p>
+    <p>
+      To produce depth of field, I implemented generating rays for a thin lens.
+      To do this, I uniformly sampled the thin lens to represent the point on
+      the lens where the "film" receives radiance. I then calculated the ray
+      which originates from this point and set its direction towards the point
+      in focus.
+    </p>
+
+    <br />
+
+    <div class="col2">
+      <div>
+        <img src="./da.png" width="95%" id="figure" />
+        <figcaption>focal distance = 4.25</figcaption>
+      </div>
+
+      <div>
+        <img src="./db.png" width="95%" id="figure" />
+        <figcaption>focal distance = 4.5</figcaption>
+      </div>
+    </div>
+
+    <div class="col2">
+      <div>
+        <img src="./dc.png" width="95%" id="figure" />
+        <figcaption>focal distance = 5.0</figcaption>
+      </div>
+
+      <div>
+        <img src="./dd.png" width="95%" id="figure" />
+        <figcaption>focal distance = 5.5</figcaption>
+      </div>
+    </div>
+
+    <div>
+      <img src="./b.gif" width="95%" id="figure" />
+      <figcaption>stack of focal distance at 4.25, 4.5, 5.0, 5.5</figcaption>
+    </div>
+
+    <p>
+      We can see that in the pictures above, a smaller focal distance means a
+      focal point closer to the camera. This is especially obvious when
+      inspecting the straight lines of the lights and the ceiling, and seeing
+      the segments which are more in focus, while the foreground and background
+      are blurred. By increasing the focal distance, the focused segment
+      "travels" further back in the scene.
+    </p>
+
+    <br />
+
+    <div class="col2">
+      <div>
+        <img src="./d1.png" width="95%" id="figure" />
+        <figcaption>lens radius = 0.12</figcaption>
+      </div>
+
+      <div>
+        <img src="./d2.png" width="95%" id="figure" />
+        <figcaption>lens radius = 0.24</figcaption>
+      </div>
+    </div>
+
+    <div class="col2">
+      <div>
+        <img src="./d3.png" width="95%" id="figure" />
+        <figcaption>lens radius = 0.36</figcaption>
+      </div>
+
+      <div>
+        <img src="./d4.png" width="95%" id="figure" />
+        <figcaption>lens radius = 0.48</figcaption>
+      </div>
+    </div>
+
+    <div>
+      <img src="./d.gif" width="95%" id="figure" />
+      <figcaption>stack of lens radii at 0.12, 0.24, 0.36, 0.48</figcaption>
+    </div>
+
+    <p>
+      In the screenshots above, we can see that as lens radius increases, there
+      is an increase in blur in the picture. We can see that while the focal
+      distance remains constant, the image at different planes of focus seems to
+      become blurrier. This is because as lens radius increases, more light is
+      let into the scene from different directions, and only the rays which
+      match closely with the focus point are collimated and sharp.
+    </p>
+
+    <br />
+    <br />
+
+    <br />
+
+    <br /><br />
+
+    <a href="https://ilyues.github.io/cs184-webpages/proj3-2/index.html"
+      >https://ilyues.github.io/cs184-webpages/proj3-2/index.html</a
+    >
+  </body>
 </html>
