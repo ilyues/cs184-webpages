@@ -1,7 +1,563 @@
 <html>
-	<head>
-	</head>
-	<body>
-		Project 4 here
-	</body>
+  <head>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+
+  <body>
+    <h1>Project 4</h1>
+    Isabel Li<br />
+    <a href="https://ilyues.github.io/cs184-webpages/proj4/index.html"
+      >https://ilyues.github.io/cs184-webpages/proj4/index.html</a
+    >
+    <br /><br />
+    <hr />
+    <br />
+    <h2>Overview</h2>
+    <p>
+      In this assignment, I built features to comprise a cloth simulator. I
+      began by building a cloth model consisting of a system of masses and
+      springs, implementing springs which represented each type of constraint
+      (structural, shearing, and bending.) I then used the Verlet intergration
+      to simulate new point mass positions, allowing forces to be applied to our
+      cloth model and produce movement between time steps. I added code to
+      handle collisions with other objects by calculating points of intersection
+      and adjusting the new position by a correction vector. To handle
+      self-collisions, I used spatial hashing to look up the point masses within
+      the system and apply a repulsive collision force to avoid self-collisions
+      in the cloth. I then wrote a few basic GLSL shader programs to produce
+      diffuse shading, Blinn-Phong shading, texture mapping, displacement
+      mapping, bump mapping, and environment-mapped reflections.
+    </p>
+
+    <p>
+      Reflecting on my implementation and process, I initially struggled to
+      accurately implement the constraint for the cloth system such that the
+      spring did not change in length more than 10% per timestep. This resulted
+      in the cloth appearing to experience more acceleration than it was
+      supposed to, slipping off the sphere very quickly, or eventually "flying"
+      out of the field of view at zero damping. While I initially didn't
+      understand the cause of these effects, I was able to resolve this through
+      carefully inspecting the parts of code that I suspected could result in
+      this behaviour, such as applying the external and external forces, and
+      eventually landed on revising the spring constraint. I also spent some
+      time trying to figure out an appropriate hash for the spatial mapping in
+      Part 4; my initial hash caused the program to run extremely slowly, but
+      after looking through some comments on the Project 4 hub on Ed, I was able
+      to develop a more reasonable hash.
+    </p>
+    <br />
+    <br />
+    <h2>Part 1: Masses and springs</h2>
+    <p>
+      I began by building a grid of masses and springs to model the cloth. This
+      involved dividing the cloth into evenly spaced point masses, and
+      connecting adjacent masses with springs. Next, I created springs to apply
+      the constraints between point masses, representing the three types of
+      constraints: structual, shearing, and bending. By setting up these
+      vectors, I was able to set up a "mesh" which would dictate how the
+      relationships between point masses should behave in the next part.
+    </p>
+
+    <br />
+
+    <div>
+      <img src="./p1_a.png" width="95%" id="figure" />
+      <figcaption>
+        Screenshot of <i>scene/pinned2.json</i> showing structure of point
+        masses and springs
+      </figcaption>
+    </div>
+
+    <div>
+      <img src="./p1_b.png" width="95%" id="figure" />
+      <figcaption>Wireframe without any shearing constraints</figcaption>
+    </div>
+
+    <div>
+      <img src="./p1_c.png" width="95%" id="figure" />
+      <figcaption>Wireframe with only shearing constraints</figcaption>
+    </div>
+
+    <div>
+      <img src="./p1_d.png" width="95%" id="figure" />
+      <figcaption>Wireframe with all constraints</figcaption>
+    </div>
+
+    <br />
+    <br />
+
+    <h2>Part 2: Simulation via numerical integration</h2>
+    <p>
+      After producing the system of masses and springs to represent the cloth
+      model, I integrated the physical equations of motion to dictate how the
+      cloth should move between time steps as forces are applied. I computed the
+      total force acting on each point mass by combining the external forces
+      (e.g. gravity) and the spring correction forces which apply the spring
+      constraints to connect the cloth. I then used the Verlet intergration to
+      calculate the new point mass positions such that
+      <code
+        >new_position = most recent position + (1.0 - damping factor) * (most
+        recent position - second most recent position) + total acceleration from
+        all forces * timestep^2</code
+      >. If a point is pinned, its new position is not updated. I constrained
+      position updates to prevent springs from being unreasonably deformed at
+      each time step by limiting a spring's length to at most 10% greater than
+      its rest length. I did this by calculating a correction vector and
+      applying it situationally depending on whether both point masses were
+      unpinned or if one of them was pinned.
+    </p>
+
+    <br />
+    <p>
+      When the spring constant <code>ks</code> is varied, the cloth falls at
+      different speeds and appears differently impacted by the "stiffness" of
+      the springs, resulting in more stretching or ripples in the cloth. At a
+      low <code>ks</code> of 500, the cloth falls faster and exhibits more
+      ripples/wrinkles as the springs extend more, and the final resting state
+      of the pinned cloth hangs with a lower "dip" in the cloth between the
+      pins. At the default of 5000, the cloth falls slower than at 500, exhibits
+      less ripples, and has a higher dip in the middle at its final resting
+      state. At a higher <code>ks</code> of 50000, the cloth falls the slowest
+      and appears smooth as it falls, appearing most "taut" in its resting
+      state.
+    </p>
+
+    <div class="col2">
+      <div>
+        <img src="./p2_a.png" width="95%" id="figure" />
+        <figcaption>ks = 500, mid-fall</figcaption>
+      </div>
+
+      <div>
+        <img src="./p2_b.png" width="95%" id="figure" />
+        <figcaption>ks = 500, resting state</figcaption>
+      </div>
+    </div>
+    <div class="col2">
+      <div>
+        <img src="./p2_c.png" width="95%" id="figure" />
+        <figcaption>ks = 5000, mid-fall</figcaption>
+      </div>
+
+      <div>
+        <img src="./p2_d.png" width="95%" id="figure" />
+        <figcaption>ks = 5000, resting state</figcaption>
+      </div>
+    </div>
+    <div class="col2">
+      <div>
+        <img src="./p2_e.png" width="95%" id="figure" />
+        <figcaption>ks = 50000, mid-fall</figcaption>
+      </div>
+
+      <div>
+        <img src="./p2_f.png" width="95%" id="figure" />
+        <figcaption>ks = 50000, resting state</figcaption>
+      </div>
+    </div>
+
+    <br />
+    <p>
+      At a lower density, the cloth hangs with less folds in its resting state,
+      giving the appearance of less weight, and also has less folds during its
+      fall. The opposite can be said for a higher density, where the cloth hangs
+      lower in its resting state and wrinkles more during its fall. However,
+      from human observation, there is no significant change in the time the
+      cloth takes to fall.
+    </p>
+
+    <div class="col2">
+      <div>
+        <img src="./density_1_1.png" width="95%" id="figure" />
+        <figcaption>density = 1</figcaption>
+      </div>
+
+      <div>
+        <img src="./density_1_2.png" width="95%" id="figure" />
+        <figcaption>density = 1</figcaption>
+      </div>
+    </div>
+    <div class="col2">
+      <div>
+        <img src="./density_15_1.png" width="95%" id="figure" />
+        <figcaption>density = 15</figcaption>
+      </div>
+
+      <div>
+        <img src="./density_15_2.png" width="95%" id="figure" />
+        <figcaption>density = 15</figcaption>
+      </div>
+    </div>
+    <div class="col2">
+      <div>
+        <img src="./density_150_1.png" width="95%" id="figure" />
+        <figcaption>density = 150</figcaption>
+      </div>
+
+      <div>
+        <img src="./density_150_2.png" width="95%" id="figure" />
+        <figcaption>density = 150</figcaption>
+      </div>
+    </div>
+
+    <p>
+      When damping is varied, the time the cloth takes to fall varies
+      drastically. At zero damping, the cloth falls quickly and takes a long
+      time to reach a rest state, instead swinging back and forth wildly and
+      heavily impacted by forces. There are many wrinkles and folds in the cloth
+      at zero damping, in particular making non-uniform shapes as it swings. At
+      default damping, the cloth is able to reach a rest state immediately after
+      falling, and falls slower. We can see that when damping is at 100%, the
+      cloth appears very smooth while falling, and falls much slower. However,
+      the ultimate rest state of all the cloths remains the same.
+    </p>
+
+    <div class="col2">
+      <div>
+        <img src="./damping_0_1.png" width="95%" id="figure" />
+        <figcaption>damping = 0%</figcaption>
+      </div>
+
+      <div>
+        <img src="./damping_0_2.png" width="95%" id="figure" />
+        <figcaption>damping = 0%</figcaption>
+      </div>
+
+      <div>
+        <img src="./damping_0_3.png" width="95%" id="figure" />
+        <figcaption>damping = 0%</figcaption>
+      </div>
+    </div>
+    <div class="col2">
+      <div>
+        <img src="./damping_20_1.png" width="95%" id="figure" />
+        <figcaption>damping = 20%</figcaption>
+      </div>
+
+      <div>
+        <img src="./damping_20_2.png" width="95%" id="figure" />
+        <figcaption>damping = 20%</figcaption>
+      </div>
+
+      <div>
+        <img src="./damping_20_3.png" width="95%" id="figure" />
+        <figcaption>damping = 20%</figcaption>
+      </div>
+    </div>
+
+    <div class="col2">
+      <div>
+        <img src="./damping_100_1.png" width="95%" id="figure" />
+        <figcaption>damping = 100%</figcaption>
+      </div>
+
+      <div>
+        <img src="./damping_100_2.png" width="95%" id="figure" />
+        <figcaption>damping = 100%</figcaption>
+      </div>
+
+      <div>
+        <img src="./damping_100_3.png" width="95%" id="figure" />
+        <figcaption>damping = 100%</figcaption>
+      </div>
+    </div>
+
+    <div>
+      <img src="./pinned_4.png" width="95%" id="figure" />
+      <figcaption>
+        My shaded cloth from <i>scene/pinned4.json</i> in its final resting
+        state
+      </figcaption>
+    </div>
+
+    <br />
+
+    <br />
+    <br />
+
+    <h2>Part 3: Handling collisions with other objects</h2>
+    <p>
+      I added support for cloth collision with spheres and planes by determining
+      if a given point mass is inside the primitive, and if so, correcting the
+      point mass's position to stay at a small distance outside the primitive's
+      surface. For spheres, I computed where the intersection between the vector
+      direction of the point mass's position and sphere's origin with the
+      sphere's surface. After finding this intersection point, I used this to
+      compute the correction vector and adjusted the new position, scaling by
+      friction. For handling collisions with planes, I calculate where the point
+      mass should've intersected the plane if it had travelled in a straight
+      line from its position towards the plane. I use this to produce a
+      correction vector, also using a small constant surface offset for the
+      slight displacement above the plane, and scale down by friction.
+    </p>
+
+    <div class="col2">
+      <div>
+        <img src="./p3_a.png" width="95%" id="figure" />
+        <figcaption>ks = 500</figcaption>
+      </div>
+
+      <div>
+        <img src="./p3_b.png" width="95%" id="figure" />
+        <figcaption>ks = 5000</figcaption>
+      </div>
+
+      <div>
+        <img src="./p3_c.png" width="95%" id="figure" />
+        <figcaption>ks = 50000</figcaption>
+      </div>
+    </div>
+
+    <p>
+      We can see that with an increase in ks, the folds become stiffer and so
+      fall over the sphere without following the shape of the sphere as much as
+      the default ks. For a lower ks, there are more folds as the cloth drapes
+      itself over the sphere and more closely follows the spherical shape. Since
+      the spring constant is lower, the cloth appears more malleable in
+      following the shape, but these deformations as it resembles the sphere
+      result in more folds.
+    </p>
+
+    <div>
+      <img src="./p3_1.png" width="95%" id="figure" />
+      <figcaption>
+        My shaded cloth lying peacefully at rest on the plane.
+      </figcaption>
+    </div>
+
+    <br />
+    <br />
+
+    <h2>Part 4: Handling self-collisions</h2>
+    <p></p>
+    <p>
+      To handle the cloth model's collision with itself and prevent it from
+      clipping through, I looped through all pairs of point masses, calculate
+      the distance between these pairs, and then add a correctional vector to
+      the two point masses if they are more than 2 * distance apart. To make
+      sure I didn't collide a point mass with itself, I checked as I looped
+      through every point mass that the candidate point mass for the pair wasn't
+      equal to the original. To build a spatial map of all point masses and
+      allow for efficient comparison of point masses, I experimented with
+      different hashes, eventually choosing
+      <code
+        >(x position - fmod(x position, w)) / w + (y position - fmod(y position,
+        h)) / h * 0.5 + (z position - fmod(z position, t)) / t * 0.25</code
+      >, where <code>w = width / num_width_points * 3</code>,
+      <code>h = height / num_height_points * 3</code>, and
+      <code>t = max(w, h)</code>.
+    </p>
+
+    <div class="col2">
+      <div>
+        <img src="./p3_4.png" width="95%" id="figure" />
+        <figcaption>ks = 500, an early initial self-collision</figcaption>
+      </div>
+
+      <div>
+        <img src="./p3_2.png" width="95%" id="figure" />
+        <figcaption>ks = 500, a later self collision</figcaption>
+      </div>
+
+      <div>
+        <img src="./p3_3.png" width="95%" id="figure" />
+        <figcaption>ks = 500, its final resting state</figcaption>
+      </div>
+    </div>
+
+    <div class="col2">
+      <div>
+        <img src="./p4_1.png" width="95%" id="figure" />
+        <figcaption>density = 1.5</figcaption>
+      </div>
+
+      <div>
+        <img src="./p4_2.png" width="95%" id="figure" />
+        <figcaption>density = 150</figcaption>
+      </div>
+    </div>
+
+    <div class="col2">
+      <div>
+        <img src="./p4_3.png" width="95%" id="figure" />
+        <figcaption>ks = 50</figcaption>
+      </div>
+
+      <div>
+        <img src="./p4_4.png" width="95%" id="figure" />
+        <figcaption>ks = 50000</figcaption>
+      </div>
+    </div>
+
+    <p>
+      We can see that at a lower density the cloth falls with less and smoother
+      folds, while I noticed that at a higher density during the entire fall the
+      cloth's surface appeared very wrinkled, with more and smaller folds. At a
+      smaller ks, the cloth had smaller folds and wrinkles closer to where the
+      self-collisions occurred, although not as much throughout the cloth in
+      comparison to a higher density. The higher density also resulted in larger
+      and smoother folds in self-collisions.
+    </p>
+
+    <br />
+    <br />
+
+    <h2>Part 5: Shaders</h2>
+    <p>
+      I implemented diffuse shading, Blinn-Phong shading, texture mapping,
+      displacement mapping, bump mapping, and environment-mapped reflections.
+    </p>
+    <p>
+      Shaders are isolated programs that run in parallel on GPU. They execute
+      sections of the graphics pipeline by taking in an input, such as colour
+      parameters or texture files, and outputting a single 4 dimensional vector
+      which describes the features at the specified location. In OpenGL there
+      are two basic shader types, vertex shaders and fragment shaders. Vertex
+      shaders apply transforms to vertices, and can modify the geometric
+      properties such as position and normal vectors. This writes the final
+      position of the vertex -- I implement how a vertex shader can displace the
+      mesh in <code>Displacement.vert</code>. Fragment shaders process the
+      fragments produced after rasterisation, taking in the geometric attributes
+      of the fragment. It computes and writes a colour out to
+      <code>out_color</code>.
+    </p>
+    <div class="col2">
+      <div>
+        <img src="./bp_1.png" width="95%" id="figure" />
+        <figcaption>
+          k_a = 0.5, k_d = 0.5, k_s = 0.5, entire Blinn-Phong model
+        </figcaption>
+      </div>
+
+      <div>
+        <img src="./bp_a.png" width="95%" id="figure" />
+        <figcaption>k_a = 0.5, only ambient component</figcaption>
+      </div>
+    </div>
+    <div class="col2">
+      <div>
+        <img src="./bp_d.png" width="95%" id="figure" />
+        <figcaption>k_d = 0.5, only diffuse component</figcaption>
+      </div>
+
+      <div>
+        <img src="./bp_s.png" width="95%" id="figure" />
+        <figcaption>k_s = 0.5, only specular component</figcaption>
+      </div>
+    </div>
+
+    <div>
+      <img src="./bp_0.png" width="95%" id="figure" />
+      <figcaption>
+        k_a = 0.1, k_d = 0.85, k_s = 0.5, p = 50, entire Blinn-Phong model
+      </figcaption>
+    </div>
+
+    <p>
+      The Blinn-Phong model combines three components of light to result in the
+      final render; ambient, diffuse, and specular. It uses the viewer angle to
+      calculate how much light is reflected from the surface and visible to the
+      viewer, and also adds a halfway vector in the middle between the light
+      source vector and viewer vector. This halfway vector has the potential to
+      maximise the reflection intensity.
+    </p>
+
+    <div class="col2">
+      <div>
+        <img src="./txt_0.png" width="95%" id="figure" />
+        <figcaption>My custom texture on sphere</figcaption>
+      </div>
+
+      <div>
+        <img src="./txt_1.png" width="95%" id="figure" />
+        <figcaption>My custom texture on cloth</figcaption>
+      </div>
+    </div>
+
+    <p>
+      In bump mapping, the normal vectors of an object are modified in the
+      fragment shader to give the illusion of bumps on an object, while in
+      displacement mapping the vertex positions are also displaced with a vertex
+      shader to reflect the height map. The fragment shader I used for
+      displacement mapping is identical to the one I implemented for bump
+      mapping. We can see that while the bump mapping maps a texture while
+      appears like three dimensional shading, the overall shape of the sphere
+      and the cloth at its silhouette and edges is unchanged. On the other hand,
+      for displacement mapping, in addition to the appearance of the shadows and
+      lights of the textures, the surface geometry of the sphere has been
+      changed, as can be seen at the shape's perimeter being un-smooth and
+      jagged.
+    </p>
+
+    <div class="col2">
+      <div>
+        <img src="./bump_s.png" width="95%" id="figure" />
+        <figcaption>bump shader on sphere</figcaption>
+      </div>
+
+      <div>
+        <img src="./bump_c.png" width="95%" id="figure" />
+        <figcaption>bump shader on cloth</figcaption>
+      </div>
+    </div>
+
+    <div>
+      <img src="./dis_s.png" width="95%" id="figure" />
+      <figcaption>displacement shader on sphere</figcaption>
+    </div>
+
+    <p>
+      Changing the coarseness, we can see that at a higher coarseness the bump
+      shaded sphere actually appears to have a ever so slightly "smoother"
+      surface. On the other hand, for the displacement shaded sphere, at
+      coarseness 16 it doesn't look too different from the bump-shaded sphere,
+      but at a higher coarseness of 128 the change in the sphere's geometry is
+      much more pronounced and shows jagged edges on the sphere's silhouette.
+    </p>
+
+    <div class="col2">
+      <div>
+        <img src="./bump_s_16.png" width="95%" id="figure" />
+        <figcaption>bump shader on sphere, coarseness = 16</figcaption>
+      </div>
+      <div>
+        <img src="./bump_s_128.png" width="95%" id="figure" />
+        <figcaption>bump shader on sphere, coarseness = 128</figcaption>
+      </div>
+    </div>
+
+    <div class="col2">
+      <div>
+        <img src="./dis_s_16.png" width="95%" id="figure" />
+        <figcaption>displacement shader on sphere, coarseness = 16</figcaption>
+      </div>
+      <div>
+        <img src="./dis_s_128.png" width="95%" id="figure" />
+        <figcaption>displacement shader on sphere, coarseness = 128</figcaption>
+      </div>
+    </div>
+
+    <div class="col2">
+      <div>
+        <img src="./p5_1.png" width="95%" id="figure" />
+        <figcaption>mirror shader on cloth</figcaption>
+      </div>
+
+      <div>
+        <img src="./p5_2.png" width="95%" id="figure" />
+        <figcaption>mirror shader on sphere</figcaption>
+      </div>
+    </div>
+
+    <br />
+    <br />
+
+    <br />
+
+    <br /><br />
+
+    <a href="https://ilyues.github.io/cs184-webpages/proj4/index.html"
+      >https://ilyues.github.io/cs184-webpages/proj4/index.html</a
+    >
+  </body>
 </html>
